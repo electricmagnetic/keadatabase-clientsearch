@@ -9,7 +9,11 @@ import { getValidatedTokens } from './nzbbtef/nzbbtef';
 import colourLibrary from './nzbbtef/colours/library';
 import './BandComboEngine.css';
 
-const API_URL = `http://localhost:8000/band_combos/`;
+const API_URL = `https://data.keadatabase.nz/band_combos/`;
+
+// TODO: move list processing out of render to reduce workload
+// TODO: store results in localStorage, only refresh if manually refreshed or older than 1 hour
+// TODO: store search state in URL as queryString
 
 const ColourBlock = ({ colour }) => (
   <>
@@ -31,7 +35,7 @@ const BandCombo = ({ bandCombo }) => (
     <div className="card mb-3">
       <div className="card-body">
         <div className="card-text">
-          <small>{bandCombo.bird}</small>
+          <small>{bandCombo.bird.slug}</small>
           <h2 className="h5">{bandCombo.name}</h2>
           <dl className="mb-0">
             {bandCombo.colours && (
@@ -65,7 +69,7 @@ const BandCombos = ({ bandCombos }) => (
   <div className="BandCombos">
     <div className="row">
       {bandCombos.map(bandCombo => (
-        <BandCombo key={bandCombo.bird} bandCombo={bandCombo} />
+        <BandCombo key={bandCombo.bird.slug} bandCombo={bandCombo} />
       ))}
     </div>
   </div>
@@ -105,7 +109,7 @@ class BandComboEngine extends Component {
       } else if (bandCombosFetch.rejected) {
         return <span>Error</span>;
       } else if (bandCombosFetch.fulfilled) {
-        const bandCombos = bandCombosFetch.value.map(bandCombo => {
+        const bandCombos = bandCombosFetch.value.results.map(bandCombo => {
           const tokens = getValidatedTokens(bandCombo.name);
           const flattenedTokens = flattenTokens(tokens);
 
