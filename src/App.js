@@ -1,5 +1,4 @@
-import React, { Component } from 'react';
-import { connect } from 'react-refetch';
+import React from 'react';
 
 import BandComboEngine from './BandComboEngine';
 
