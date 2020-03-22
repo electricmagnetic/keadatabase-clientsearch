@@ -1,0 +1,25 @@
+{
+  "files": {
+    "main.css": "/keadatabase-clientsearch/static/css/main.73ca05c0.chunk.css",
+    "main.js": "/keadatabase-clientsearch/static/js/main.81aca33d.chunk.js",
+    "main.js.map": "/keadatabase-clientsearch/static/js/main.81aca33d.chunk.js.map",
+    "runtime-main.js": "/keadatabase-clientsearch/static/js/runtime-main.4f32d09e.js",
+    "runtime-main.js.map": "/keadatabase-clientsearch/static/js/runtime-main.4f32d09e.js.map",
+    "static/css/2.dff7e65c.chunk.css": "/keadatabase-clientsearch/static/css/2.dff7e65c.chunk.css",
+    "static/js/2.040a5e61.chunk.js": "/keadatabase-clientsearch/static/js/2.040a5e61.chunk.js",
+    "static/js/2.040a5e61.chunk.js.map": "/keadatabase-clientsearch/static/js/2.040a5e61.chunk.js.map",
+    "index.html": "/keadatabase-clientsearch/index.html",
+    "precache-manifest.f4474c0238602f0a4a0cc32f10c1ced4.js": "/keadatabase-clientsearch/precache-manifest.f4474c0238602f0a4a0cc32f10c1ced4.js",
+    "service-worker.js": "/keadatabase-clientsearch/service-worker.js",
+    "static/css/2.dff7e65c.chunk.css.map": "/keadatabase-clientsearch/static/css/2.dff7e65c.chunk.css.map",
+    "static/css/main.73ca05c0.chunk.css.map": "/keadatabase-clientsearch/static/css/main.73ca05c0.chunk.css.map",
+    "static/js/2.040a5e61.chunk.js.LICENSE.txt": "/keadatabase-clientsearch/static/js/2.040a5e61.chunk.js.LICENSE.txt"
+  },
+  "entrypoints": [
+    "static/js/runtime-main.4f32d09e.js",
+    "static/css/2.dff7e65c.chunk.css",
+    "static/js/2.040a5e61.chunk.js",
+    "static/css/main.73ca05c0.chunk.css",
+    "static/js/main.81aca33d.chunk.js"
+  ]
+}
