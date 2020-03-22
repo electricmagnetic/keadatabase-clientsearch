@@ -1,0 +1,9 @@
+.token-colour {
+  background-color: #eeeeee;
+  color: #222;
+}
+.token-symbol {
+  background-color: #ffffff;
+  color: #222;
+  border: 1px solid #222;
+}

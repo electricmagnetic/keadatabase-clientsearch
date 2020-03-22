@@ -1,5 +1,9 @@
 import React, { Component } from 'react';
 import { connect } from 'react-refetch';
+import { Typeahead, MenuItem, Menu, Token, ClearButton } from 'react-bootstrap-typeahead';
+
+import 'react-bootstrap-typeahead/css/Typeahead.css';
+import 'react-bootstrap-typeahead/css/Typeahead-bs4.css';
 
 import { getValidatedTokens } from './nzbbtef/nzbbtef';
 import colourLibrary from './nzbbtef/colours/library';
@@ -84,6 +88,13 @@ const getSymbols = tokens => [
 ];
 
 class BandComboEngine extends Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      selected: [],
+    };
+  }
+
   componentDidMount() {
     this.props.lazyFetchBandCombos();
   }
@@ -115,8 +126,20 @@ class BandComboEngine extends Component {
         });
 
         const allTokens = flatten(bandCombos.map(bandCombo => bandCombo.flattenedTokens));
-        const colours = getColours(allTokens).sort();
         const symbols = getSymbols(allTokens).sort();
+        const colours = getColours(allTokens).sort();
+
+        const options = []
+          .concat(symbols.map(symbol => Object.assign({}, { symbol: symbol, label: symbol }, {isSymbol: true, isColour: false})))
+          .concat(colours.map(colour => Object.assign({}, { colour: colour }, {isColour: true, isSymbol: false}, colourLibrary[colour])));
+
+        const filteredBandCombos = bandCombos.filter(bandCombo => (
+          this.state.selected.length > 0 ? this.state.selected.reduce((accumulator, currentValue) => {
+            if (currentValue.isColour && bandCombo.colours) return (bandCombo.colours.includes(currentValue.colour)) && accumulator;
+            else if (currentValue.isSymbol && bandCombo.symbols) return (bandCombo.symbols.includes(currentValue.symbol)) && accumulator;
+            else return accumulator;
+          }, true) : true
+        ))
 
         return (
           <>
@@ -141,7 +164,32 @@ class BandComboEngine extends Component {
                 </div>
               </div>
             </div>
-            <BandCombos bandCombos={bandCombos} {...others} />
+            <Typeahead
+              className="BandComboTypeahead mb-3"
+              options={options}
+              selectHintOnEnter
+              highlightOnlyResult
+              name="bandCombo"
+              placeholder="Type band symbol or colour"
+              id="bandCombo"
+              ignoreDiacritics={false}
+              maxResults={100}
+              paginationText="Display more…"
+              multiple
+              selected={this.state.selected}
+              onChange={selected => this.setState({selected: selected})}
+              renderToken={(option, props, index) => {
+                if(option.isColour) return <Token onRemove={props.onRemove} option={option} key={index} className="token-colour"><ColourBlock colour={option.colour} /></Token>;
+                else if (option.isSymbol) return <Token onRemove={props.onRemove} option={option} key={index} className="token-symbol"><strong>{option.label}</strong></Token>;
+                else return <Token onRemove={props.onRemove} option={option}><>{option}</></Token>;
+              }}
+              renderMenuItemChildren={(option, props, index) => {
+                if (option.isColour) return <><ColourBlock colour={option.colour} /><small className="ml-2">(Colour)</small></>;
+                else if (option.isSymbol) return <>{ option.label }<small className="ml-2">(Symbol)</small></>;
+                else return <>{option}</>;
+              }}
+            />
+            <BandCombos bandCombos={filteredBandCombos} {...others} />
           </>
         );
       }
