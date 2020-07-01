@@ -3,17 +3,18 @@ import { connect } from 'react-refetch';
 import { Typeahead, Token } from 'react-bootstrap-typeahead';
 
 import 'react-bootstrap-typeahead/css/Typeahead.css';
-import 'react-bootstrap-typeahead/css/Typeahead-bs4.css';
 
 import { getValidatedTokens } from './nzbbtef/nzbbtef';
 import colourLibrary from './nzbbtef/colours/library';
 import './BandComboEngine.css';
 
-const API_URL = `https://data.keadatabase.nz/band_combos/`;
+const API_URL = `https://data.keadatabase.nz/band_combos/?page_size=10000`;
 
 // TODO: move list processing out of render to reduce workload
-// TODO: store results in localStorage, only refresh if manually refreshed or older than 1 hour
+// TODO: store results with localForage, only refresh if manually refreshed or older than 1 hour
 // TODO: store search state in URL as queryString
+// TODO: figure out what's going on with lime green
+// TODO: implement on kākā db
 
 const ColourBlock = ({ colour }) => (
   <>
@@ -82,9 +83,11 @@ const flattenTokens = tokens =>
       accumulator.concat((tokens.tokens && flattenTokens(tokens.tokens)) || tokens),
     []
   );
+
 const getColours = tokens => [
   ...new Set(tokens.filter(token => token && token.isColourToken).map(token => token.value)),
 ];
+
 const getSymbols = tokens => [
   ...new Set(tokens.filter(token => token && token.type === 'symbol').map(token => token.value)),
 ];
@@ -130,24 +133,34 @@ class BandComboEngine extends Component {
         const allTokens = bandCombos.map(bandCombo => bandCombo.flattenedTokens).flat();
         const symbols = getSymbols(allTokens).sort();
         const colours = getColours(allTokens).sort();
+        const names = bandCombos.map(bandCombo => bandCombo.bird.name);
 
         const options = []
-          .concat(
-            symbols.map(symbol =>
-              Object.assign(
-                {},
-                { symbol: symbol, label: symbol },
-                { isSymbol: true, isColour: false }
-              )
-            )
-          )
           .concat(
             colours.map(colour =>
               Object.assign(
                 {},
                 { colour: colour },
-                { isColour: true, isSymbol: false },
+                { isColour: true, isSymbol: false, isName: false },
                 colourLibrary[colour]
+              )
+            )
+          )
+          .concat(
+            symbols.map(symbol =>
+              Object.assign(
+                {},
+                { symbol: symbol, label: symbol },
+                { isSymbol: true, isColour: false, isName: false }
+              )
+            )
+          )
+          .concat(
+            names.map(name =>
+              Object.assign(
+                {},
+                { name: name, label: name },
+                { isName: true, isSymbol: false, isColour: false}
               )
             )
           );
@@ -226,6 +239,17 @@ class BandComboEngine extends Component {
                       <strong>{option.label}</strong>
                     </Token>
                   );
+                else if (option.isName)
+                  return (
+                    <Token
+                      onRemove={props.onRemove}
+                      option={option}
+                      key={index}
+                      className="token-symbol"
+                    >
+                      <strong>{option.label}</strong>
+                    </Token>
+                  );
                 else
                   return (
                     <Token onRemove={props.onRemove} option={option}>
@@ -248,6 +272,13 @@ class BandComboEngine extends Component {
                       <small className="ml-2">(Symbol)</small>
                     </>
                   );
+                else if (option.isName)
+                  return (
+                    <>
+                      {option.label}
+                      <small className="ml-2">(Name)</small>
+                    </>
+                  )
                 else return <>{option}</>;
               }}
             />
