@@ -1,9 +1,21 @@
+.rbt-token {
+  border: 1px solid #222;
+}
 .token-colour {
-  background-color: #eeeeee;
+  background: #eee;
   color: #222;
 }
 .token-symbol {
-  background-color: #ffffff;
+  background: #eee;
   color: #222;
-  border: 1px solid #222;
+  font-weight: bolder;
+}
+.token-name {
+  background: #fff;
+  color: #222;
+}
+.token-primaryBand {
+  background: linear-gradient(to right, #808080, #ddd, #808080);
+  color: #000;
+  font-weight: bolder;
 }

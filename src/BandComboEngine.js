@@ -8,7 +8,7 @@ import { getValidatedTokens } from './nzbbtef/nzbbtef';
 import colourLibrary from './nzbbtef/colours/library';
 import './BandComboEngine.css';
 
-const API_URL = `https://data.keadatabase.nz/band_combos/?page_size=10000`;
+const API_URL = `https://data.keadatabase.nz/birds/?page_size=10000`;
 
 // TODO: move list processing out of render to reduce workload
 // TODO: store results with localForage, only refresh if manually refreshed or older than 1 hour
@@ -31,28 +31,30 @@ const ColourBlock = ({ colour }) => (
   </>
 );
 
-const BandCombo = ({ bandCombo }) => (
+const Bird = ({ bird }) => (
   <div className="col-md-3">
     <div className="card mb-3">
       <div className="card-body">
         <div className="card-text">
-          <small>{bandCombo.bird.slug}</small>
-          <h2 className="h5">{bandCombo.name}</h2>
+          <small>{bird.slug}</small>
+          <h2 className="h5">{bird.name}</h2>
+          <h3 className="h6">{bird.band_combo}</h3>
+          <p>{bird.primary_band}</p>
           <dl className="mb-0">
-            {bandCombo.colours && (
+            {bird.colours && (
               <>
                 <dt>Colours</dt>
-                {bandCombo.colours.map(colour => (
+                {bird.colours.map(colour => (
                   <dd key={colour} className="mr-2 d-inline-block">
                     <ColourBlock key={colour} colour={colour} />
                   </dd>
                 ))}
               </>
             )}
-            {bandCombo.symbols && (
+            {bird.symbols && (
               <>
                 <dt>Symbols</dt>
-                {bandCombo.symbols.map(symbol => (
+                {bird.symbols.map(symbol => (
                   <dd key={symbol} className="mr-2 d-inline-block">
                     {symbol}
                   </dd>
@@ -66,11 +68,11 @@ const BandCombo = ({ bandCombo }) => (
   </div>
 );
 
-const BandCombos = ({ bandCombos }) => (
-  <div className="BandCombos">
+const Birds = ({ birds }) => (
+  <div className="Birds">
     <div className="row">
-      {bandCombos.map(bandCombo => (
-        <BandCombo key={bandCombo.bird.slug} bandCombo={bandCombo} />
+      {birds.map(bird => (
+        <Bird key={bird.slug} bird={bird} />
       ))}
     </div>
   </div>
@@ -92,6 +94,10 @@ const getSymbols = tokens => [
   ...new Set(tokens.filter(token => token && token.type === 'symbol').map(token => token.value)),
 ];
 
+const getNames = birds => birds.filter(bird => bird.name).map(bird => bird.name);
+
+const getPrimaryBands = birds => birds.filter(bird => bird.primary_band).map(bird => bird.primary_band);
+
 class BandComboEngine extends Component {
   constructor(props) {
     super(props);
@@ -101,24 +107,24 @@ class BandComboEngine extends Component {
   }
 
   componentDidMount() {
-    this.props.lazyFetchBandCombos();
+    this.props.lazyFetchBirds();
   }
 
   render() {
-    if (this.props.bandCombosFetch) {
-      const { bandCombosFetch, ...others } = this.props;
-      if (bandCombosFetch.pending) {
+    if (this.props.birdsFetch) {
+      const { birdsFetch, ...others } = this.props;
+      if (birdsFetch.pending) {
         return <span>Loading</span>;
-      } else if (bandCombosFetch.rejected) {
+      } else if (birdsFetch.rejected) {
         return <span>Error</span>;
-      } else if (bandCombosFetch.fulfilled) {
-        const bandCombos = bandCombosFetch.value.results.map(bandCombo => {
-          const tokens = getValidatedTokens(bandCombo.name);
+      } else if (birdsFetch.fulfilled) {
+        const birds = birdsFetch.value.results.filter(bird => bird.band_combo !== null).map(bird => {
+          const tokens = getValidatedTokens(bird.band_combo);
           const flattenedTokens = flattenTokens(tokens);
 
           return Object.assign(
             {},
-            bandCombo,
+            bird,
             {
               tokens: tokens,
               flattenedTokens: flattenTokens(tokens),
@@ -130,10 +136,17 @@ class BandComboEngine extends Component {
           );
         });
 
-        const allTokens = bandCombos.map(bandCombo => bandCombo.flattenedTokens).flat();
+        const allTokens = birds.map(bird => bird.flattenedTokens).flat();
+
+        // Derived from tokens (part of band combo)
         const symbols = getSymbols(allTokens).sort();
         const colours = getColours(allTokens).sort();
-        const names = bandCombos.map(bandCombo => bandCombo.bird.name);
+
+        // Derived from birds (not part of band combo)
+        const names = getNames(birds).sort();
+        const primaryBands = getPrimaryBands(birds).sort();
+
+        const optionTypes = { isColour: false, isSymbol: false, isName: false, isPrimaryBand: false };
 
         const options = []
           .concat(
@@ -141,7 +154,8 @@ class BandComboEngine extends Component {
               Object.assign(
                 {},
                 { colour: colour },
-                { isColour: true, isSymbol: false, isName: false },
+                optionTypes,
+                { isColour: true },
                 colourLibrary[colour]
               )
             )
@@ -151,7 +165,8 @@ class BandComboEngine extends Component {
               Object.assign(
                 {},
                 { symbol: symbol, label: symbol },
-                { isSymbol: true, isColour: false, isName: false }
+                optionTypes,
+                { isSymbol: true }
               )
             )
           )
@@ -160,26 +175,37 @@ class BandComboEngine extends Component {
               Object.assign(
                 {},
                 { name: name, label: name },
-                { isName: true, isSymbol: false, isColour: false}
+                optionTypes,
+                { isName: true }
+              )
+            )
+          )
+          .concat(
+            primaryBands.map(primaryBand =>
+              Object.assign(
+                {},
+                { primaryBand: primaryBand, label: primaryBand },
+                optionTypes,
+                { isPrimaryBand: true }
               )
             )
           );
 
-        const filteredBandCombos = bandCombos.filter(bandCombo =>
-          this.state.selected.length > 0
-            ? this.state.selected.reduce((accumulator, currentValue) => {
-                if (currentValue.isColour && bandCombo.colours)
-                  return bandCombo.colours.includes(currentValue.colour) && accumulator;
-                else if (currentValue.isSymbol && bandCombo.symbols)
-                  return bandCombo.symbols.includes(currentValue.symbol) && accumulator;
-                else return accumulator;
-              }, true)
-            : true
+        const filteredBirds = this.state.selected.length === 0 ?
+          birds :
+          birds.filter(bird =>
+            this.state.selected.every(criteria => {
+              if (criteria.isColour && bird.colours) return bird.colours.includes(criteria.colour);
+              if (criteria.isSymbol && bird.symbols) return bird.symbols.includes(criteria.symbol);
+              if (criteria.isName && bird.name) return criteria.name === bird.name;
+              if (criteria.isPrimaryBand && bird.primary_band) return criteria.primaryBand === bird.primary_band;
+              return false;
+            })
         );
 
         return (
           <>
-            <button onClick={this.props.lazyFetchBandCombos} className="btn btn-primary mb-3">
+            <button onClick={this.props.lazyFetchBirds} className="btn btn-primary mb-3">
               Refresh
             </button>
             <div className="card mb-3">
@@ -203,86 +229,64 @@ class BandComboEngine extends Component {
               </div>
             </div>
             <Typeahead
-              className="BandComboTypeahead mb-3"
+              className="BirdTypeahead mb-3"
               options={options}
               selectHintOnEnter
               highlightOnlyResult
-              name="bandCombo"
-              placeholder="Type band symbol or colour"
-              id="bandCombo"
+              name="bird"
+              placeholder="Type band symbol, colour, name or primary (metal) band"
+              id="bird"
               ignoreDiacritics={false}
               maxResults={100}
               paginationText="Display more…"
               multiple
               selected={this.state.selected}
               onChange={selected => this.setState({ selected: selected })}
+              labelKey={option => option.label}
               renderToken={(option, props, index) => {
-                if (option.isColour)
-                  return (
-                    <Token
-                      onRemove={props.onRemove}
-                      option={option}
-                      key={index}
-                      className="token-colour"
-                    >
-                      <ColourBlock colour={option.colour} />
-                    </Token>
-                  );
-                else if (option.isSymbol)
-                  return (
-                    <Token
-                      onRemove={props.onRemove}
-                      option={option}
-                      key={index}
-                      className="token-symbol"
-                    >
-                      <strong>{option.label}</strong>
-                    </Token>
-                  );
-                else if (option.isName)
-                  return (
-                    <Token
-                      onRemove={props.onRemove}
-                      option={option}
-                      key={index}
-                      className="token-symbol"
-                    >
-                      <strong>{option.label}</strong>
-                    </Token>
-                  );
+                if (option.label)
+                return (
+                  <Token
+                    onRemove={props.onRemove}
+                    option={option}
+                    key={index}
+                    className={
+                      (option.isColour && 'token-colour') ||
+                      (option.isSymbol && 'token-symbol') ||
+                      (option.isName && 'token-name') ||
+                      (option.isPrimaryBand && 'token-primaryBand')
+                    }
+                  >
+                    {option.isColour ? <ColourBlock colour={option.colour} /> : option.label}
+                  </Token>
+                )
                 else
-                  return (
-                    <Token onRemove={props.onRemove} option={option}>
-                      <>{option}</>
-                    </Token>
-                  );
+                return (
+                  <Token onRemove={props.onRemove} option={option}>
+                    <>{option}</>
+                  </Token>
+                )
               }}
               renderMenuItemChildren={(option, props, index) => {
-                if (option.isColour)
-                  return (
-                    <>
-                      <ColourBlock colour={option.colour} />
-                      <small className="ml-2">(Colour)</small>
-                    </>
-                  );
-                else if (option.isSymbol)
-                  return (
-                    <>
-                      {option.label}
-                      <small className="ml-2">(Symbol)</small>
-                    </>
-                  );
-                else if (option.isName)
-                  return (
-                    <>
-                      {option.label}
-                      <small className="ml-2">(Name)</small>
-                    </>
-                  )
-                else return <>{option}</>;
+                if (option.label)
+                return (
+                  <>
+                    {option.isColour ? <ColourBlock colour={option.colour} /> : option.label}
+                    <small className="ml-2">
+                      ({
+                        (option.isColour && 'Colour') ||
+                        (option.isSymbol && 'Symbol') ||
+                        (option.isName && 'Name') ||
+                        (option.isPrimaryBand && 'Primary Band')
+                      })
+                    </small>
+                  </>
+                )
+                else
+                return <>{option}</>;
               }}
             />
-            <BandCombos bandCombos={filteredBandCombos} {...others} />
+            <Birds birds={filteredBirds} {...others} />
           </>
         );
       }
@@ -291,7 +295,7 @@ class BandComboEngine extends Component {
 }
 
 export default connect(props => ({
-  lazyFetchBandCombos: () => ({
-    bandCombosFetch: { url: `${API_URL}`, force: true },
+  lazyFetchBirds: () => ({
+    birdsFetch: { url: `${API_URL}`, force: true },
   }),
 }))(BandComboEngine);
