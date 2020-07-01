@@ -1,1 +1,0 @@
-{"version":3,"sources":["BandComboEngine.css"],"names":[],"mappings":"AAAA,cACE,qBAAyB,CACzB,UACF,CACA,cACE,qBAAyB,CACzB,UAAW,CACX,qBACF","file":"main.73ca05c0.chunk.css","sourcesContent":[".token-colour {\n  background-color: #eeeeee;\n  color: #222;\n}\n.token-symbol {\n  background-color: #ffffff;\n  color: #222;\n  border: 1px solid #222;\n}\n"]}

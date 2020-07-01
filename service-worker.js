@@ -14,7 +14,7 @@
 importScripts("https://storage.googleapis.com/workbox-cdn/releases/4.3.1/workbox-sw.js");
 
 importScripts(
-  "/keadatabase-clientsearch/precache-manifest.f4474c0238602f0a4a0cc32f10c1ced4.js"
+  "/keadatabase-clientsearch/precache-manifest.534e33df739a73bda0cc8983f07c2d54.js"
 );
 
 self.addEventListener('message', (event) => {
