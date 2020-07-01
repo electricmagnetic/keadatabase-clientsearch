@@ -17,5 +17,12 @@
 .token-primaryBand {
   background: linear-gradient(to right, #808080, #ddd, #808080);
   color: #000;
+  border-color: transparent;
   font-weight: bolder;
+}
+.token-studyArea {
+  background: #eee;
+  color: #000;
+  border-color: transparent;
+  font-style: italic;
 }
